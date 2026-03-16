@@ -1,0 +1,10 @@
+[package]
+name = "netcom-two"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+ed25519-dalek = { version = "2.2.0", features = ["rand_core"] }
+rand = "0.7.0"
+mansikka = {git = "https://github.com/NotaKennen/mansikka.git", version = "1.0.1"}
+libc = "0.2.183"
