@@ -1,8 +1,8 @@
 use std::{
-    io::{Read, Write}, net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream}, str::FromStr, sync::mpsc,
+    fs::read_to_string, io::{Read, Write}, net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream}, str::FromStr, sync::mpsc, thread::sleep
 };
 
-use crate::utils;
+use crate::{commands, utils};
 use crate::settings::*;
 
 /*
@@ -50,16 +50,24 @@ fn dynamic_read(stream: &mut impl Read) -> Vec<u8> {
 /// Function also handles 
 pub fn net_thread(in_channel: mpsc::Receiver<NetCommand>, out_channel: mpsc::Sender<NetCommand>) {
     
+    // Data lookup
+    let listener_addr = read_to_string(format!("{}{}", DATA_DIRECTORY, LISTENER_PATH)).unwrap();
+    let initial_host = read_to_string(format!("{}{}", DATA_DIRECTORY, INITIALHOST_PATH)).unwrap();
+    let username = read_to_string(format!("{}{}", DATA_DIRECTORY, USER_PATH)).unwrap();
+    let privkey: [u8; 32] = std::fs::read_to_string(format!("{}{}", DATA_DIRECTORY, KEY_PATH)).unwrap().as_bytes().try_into().unwrap();
+    let pubkey: [u8; 32] = crate::crypt::get_public(&privkey);
+
     // Set up module
     let mut netm = NetworkMan::new();
-    let connected = netm.connect(INITIAL_HOST, true).is_ok();
-    let bound = netm.bind(LISTENER_ADDR).is_ok();
+    let connected = netm.connect(&initial_host, true).is_ok();
+    let bound = netm.bind(&listener_addr).is_ok();
     if !bound && !connected {panic!("{CYAN}[NET] Couldn't connect, couldn't bind{RESET}")}
     if bound && !connected {println!("{CYAN}[NET] Couldn't connect, running server mode{RESET}")}
     if !bound && connected {println!("{CYAN}[NET] Couldn't bind, running connect-only mode{RESET}")}
 
-    // TODO: Send a JOIN
-    // We somehow need to move the username here
+    // Send a JOIN
+    let join = commands::join(&username, pubkey, privkey, "join0000");
+    netm.send_command(join);
 
     // Main network loop 
     loop {
@@ -81,13 +89,16 @@ pub fn net_thread(in_channel: mpsc::Receiver<NetCommand>, out_channel: mpsc::Sen
         }
 
         // Accept incoming
-        let _ = netm.accept_incoming(false, None);
+        let _ = netm.accept_incoming(None);
 
         // Read for commands
         let commands = netm.get_commands();
         for command in commands {
             let _ = out_channel.send(command);
         }
+
+        // Sleep for a bit to not use 10 petabytes of network
+        sleep(READ_TIMEOUT); // Read timeout is a good sleep amount usually
     }    
 }
 
@@ -110,7 +121,7 @@ impl NetworkMan {
         // waow cool entrypoint or something
         // could rework the redir amount to be reverse and use a limit
         // idk I'm lazy
-        // FIXME: Reverse redir limit
+        // won't even do it
         self.be_connect(addr, allow_redir, 0)
     }
 
@@ -351,9 +362,9 @@ impl NetworkMan {
 
     /// Takes care of any incoming connections
     /// 
-    /// Allows you to redirect connections if necessary
-    pub fn accept_incoming(&mut self, redirect: bool, redirect_address: Option<&str>) -> Result<usize, ()> {
-        // TODO: Move redir addr and redir bool to same
+    /// Redirects the incoming connection to specified address,
+    /// if not specified, accepts them to this address
+    pub fn accept_incoming(&mut self, redirect_address: Option<&str>) -> Result<usize, ()> {
         if self.listener.is_none() {return Err(())}
         let listener = self.listener.as_ref().unwrap();
 
@@ -366,8 +377,7 @@ impl NetworkMan {
             let _ = stream.set_write_timeout(Some(READ_TIMEOUT));
 
             // Redirect if needed
-            if redirect && redirect_address.is_some() {
-                // TODO: Maybe use htccommand on incoming
+            if redirect_address.is_some() {
                 // Unwrap checked :)
                 let _ = stream.write(format!("REDIR\0{}\0", redirect_address.unwrap()).as_bytes());
                 continue;

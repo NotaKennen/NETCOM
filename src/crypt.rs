@@ -5,8 +5,9 @@ use std::str::FromStr;
 /*
 Cryptography module for NETCOM
 
-Generally speaking, the entire rest of the client should be 
-usable if this module was ripped out and replaced with another system.
+A replaceable module meant for exposing an API to
+some basic cryptography components.
+Mainly signing, verifying and public key transformations
 */
 
 /// Sign a message with your private key

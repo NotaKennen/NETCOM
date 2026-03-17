@@ -14,13 +14,6 @@ pub const ACCEPTABLE_EPOCH: u64 = 120;
 // Graphics
 pub const ENABLE_TUI: bool = true;
 
-// (Configurable) Networking
-pub const INITIAL_HOST: &str = "127.0.0.1:6500";
-pub const LISTENER_ADDR: &str = "0.0.0.0:6500";
-
-// TODO: Move the networking config back to files
-// Solve this alongside the username issue
-
 //
 // Non-Configurable
 // (Unless you want to change something anyway)
@@ -31,6 +24,8 @@ pub const LISTENER_ADDR: &str = "0.0.0.0:6500";
 pub const DATA_DIRECTORY: &str = "data/";
 pub const KEY_PATH: &str = "key";
 pub const USER_PATH: &str = "username";
+pub const LISTENER_PATH: &str = "listener";
+pub const INITIALHOST_PATH: &str = "connection";
 
 // waow cool colors
 pub const RESET: &str = "\x1b[0m";

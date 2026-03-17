@@ -60,15 +60,21 @@ fn main() {
 
         // Graphics and UI stuff
         if ENABLE_TUI {
-            uima.refresh();
             for out_msg in uima.get_outgoing() {
                 let tags: Vec<&str> = out_msg.1.split(" ").collect();
                 let command = commands::message(&username, public_key, private_key, &out_msg.0, utils::upgrade_vec(tags), &salt_cache.get_salt());
                 let _ = net_send.send(command);
             }
-        } // TODO: Let TUI exit proper so we can send a LEAVE
+            let stat = uima.refresh();
+            if !stat {break}
+        }
         
         // Or sleep in case it blows and no UI is set
         else {sleep(Duration::from_millis(500))};
     }
+
+    // Send leave
+    let leave = commands::leave(&username, public_key, private_key, &salt_cache.get_salt());
+    let _ = net_send.send(leave);
+
 }

@@ -38,8 +38,8 @@ To use the example client you need to do some set up on the `data` folder. You n
 Here you need to type any 32 UTF-8 characters (specifically 32, no more no less). These will be converted to bytes and used as your private key, so don't share it around. You *should* use a RNG to generate this, though you can also smash your keyboard for a similar effect.
 - `username` <br>
 This is your username. You can type whatever UTF-8 here and it'll work, though keep it to at most 50 characters. You can change it freely, though keep in mind it's purely cosmetic. If you want a full identity change, change your key.
-
-You might also want to check out `settings.rs`, as it contains other configurable matters, such as what address should the first connection be to.
+- `listener` <br>
+- `connection` <br>
 
 After you've made these files, you can start the program and it should run as expected. Though there are also sections on both local and non-local setups.
 
@@ -54,8 +54,11 @@ A non-explained version of the setup guide
 &emsp;Any 32 character (UTF-8) key, preferably cryptographically secure <br>
 &emsp;- `data/username` <br>
 &emsp;Any at most 50 character username <br>
-3. <i>(Optional)</i> Configure connection addresses (`settings.rs`)
-4. Run the program
+&emsp;- `data/connection` <br>
+&emsp;The IP Address you want to connect to, locally `127.0.0.1:6500` <br>
+&emsp;- `data/listener` <br>
+&emsp;The broadcast address, usually `0.0.0.0:6500` <br>
+3. Run the program
 
 ### Local setup
 The local setup is the recommended test environment if you're getting familiar with the project. Assuming you've done the previous setup <i>(Quick Start / Usage)</i>, you can simply start up two clients. (Normally, this should be enough, though for further information: )
@@ -65,9 +68,9 @@ The clients will start in <i>Server mode</i> and in <i>Connect-only mode</i> (in
 Generally, assuming you're using the default configuration, the clients should be able to find each other, and form a connection without any further setup. 
 
 ### Non-local setup
-The non-local setup is a bit more challenging, but closer to an actual usage environment. You will first have to go to `settings.rs` to set your initial connection address (`INITIAL_HOST`). This is the address of the computer you will be connecting to. Additionally, you may set your `LISTENER_ADDR` (listener address), which is where the client will broadcast itself. Generally use `0.0.0.0:6500` to broadcast yourself online\*, and `127.0.0.1:6500` to not allow connections. 
+The non-local setup is a bit more challenging, but closer to an actual usage environment. You will first have to follow the base setup guide *(Quick Start / Usage)*, for the config, you want to pay special attention to `data/connection` and `data/listener`. In *connection*, you want to set the IP address of the computer you're connecting to. In *listener*, you most likely want to write `0.0.0.0:6500`, as that is the address for broadcasting yourself online\*.
 
-If you start your first client, it should start itself in server-mode (see above on what it means), this is fine. You should start your second client, which should, assuming correct configuration, connect to the first one without issue. You may now use the clients.
+If you start your first client, it should start itself in server-mode (see above on what it means), this is fine. You should start your second client, which should, assuming correct configuration, connect to the first one without issue.
 
 \* Assuming you have set up port forwarding properly
 

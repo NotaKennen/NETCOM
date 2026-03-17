@@ -1,4 +1,5 @@
-use std::time::SystemTime;
+use std::collections::HashMap;
+use std::time::{Duration, Instant, SystemTime};
 use rand::random;
 
 use crate::{crypt, network::NetCommand, utils};
@@ -93,14 +94,20 @@ pub fn verify(command: &NetCommand, salt_cache: &mut SaltCache) -> bool {
             }
 
             // Verify salt
-            if salt_cache.check_salt(&utils::key_to_string(public_key), salt) {return false}
-            salt_cache.enter_salt(&utils::key_to_string(public_key), salt);
+            if salt_cache.check_salt(&utils::key_to_string(public_key), salt) {
+                return false
+            }
             
             // Verify evidence
             let exp_evidence = format!("JOIN\0{}\0{}\0{}\0{}\0", username, utils::key_to_string(public_key), timestamp, salt);
             if crypt::verify(&public_key, &evidence, &exp_evidence) {
                 return false
             }
+            
+            // Cache salt
+            salt_cache.enter_salt(&utils::key_to_string(public_key), salt);
+            // Salt is cached here so that it has to pass the evidence check first
+            // So that no one falsifies salts
 
             return true
         }
@@ -145,43 +152,45 @@ pub fn verify(command: &NetCommand, salt_cache: &mut SaltCache) -> bool {
     }
 }
 
-/// A basic cache for storing and making salts
+const SALT_LIFETIME: Duration = Duration::from_secs(120);
+
+/// A base structure for creating and managing salts
 pub struct SaltCache {
-    salt_counter: u32, // mmm very random indeed
-    stored_salts: Vec<String>,
-}   // TODO: Remove salts > 2 minutes old
+    salt_counter: u32,
+    stored_salts: HashMap<(String, String), Instant>,
+}
 impl SaltCache {
     pub fn new() -> Self {
-        SaltCache { 
+        SaltCache {
             salt_counter: random::<u16>() as u32,
-            stored_salts: vec![]
+            stored_salts: HashMap::new(),
         }
     }
 
-    /// Gives you an unique salt
-    /// 
-    /// Uses an internal counter to give you a number,
-    /// since it doesn't need to be random.
-    /// It is still unique though.
-    pub fn get_salt(&mut self ) -> String {
-        self.salt_counter += 1;
-        if self.salt_counter > 99999999 {self.salt_counter = 0}
+    /// Gives you an unique (but non-random) salt
+    pub fn get_salt(&mut self) -> String {
+        self.salt_counter = (self.salt_counter + 1) % 100_000_000;
         self.salt_counter.to_string()
+    }
+
+    /// cleans timed out salts from the cache
+    fn cleanup(&mut self) {
+        let now = Instant::now();
+        self.stored_salts.retain(|_, t| now.duration_since(*t) < SALT_LIFETIME);
     }
 
     /// Enters a salt into the cache
     pub fn enter_salt(&mut self, key: &str, salt: &str) {
-        let f_salt = format!("{}\0{}", key, salt);
-        self.stored_salts.push(f_salt)
+        self.cleanup();
+        self.stored_salts.insert(
+            (key.to_string(), salt.to_string()),
+            Instant::now(),
+        );
     }
 
-    /// Checks whether or not a salt has been entered
-    /// 
-    /// Returns True if a salt IS in the cache.
-    /// False if salt IS NOT in the cache.
+    /// Checks whether or not a salt is in the cache
     pub fn check_salt(&mut self, key: &str, salt: &str) -> bool {
-        let f_salt = format!("{}\0{}", key, salt);
-        let stat = self.stored_salts.contains(&f_salt);
-        return stat // FIXME: mmm yes very efficient
-    }               // (it's not) ((make it))
+        self.cleanup();
+        self.stored_salts.contains_key(&(key.to_string(), salt.to_string()))
+    }
 }

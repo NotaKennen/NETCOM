@@ -1,16 +1,9 @@
-use std::process::exit;
 use mansikka::{
-    AnsiController, 
-    char::*, 
-    libc::{
+    AnsiController, char::*, clear_screen, libc::{
         disable_raw_mode, 
         enable_raw_mode, 
         terminal_size
-    }, 
-    clear_screen, 
-    move_cursor, 
-    print_loc, 
-    wait_for_in
+    }, move_cursor, print_loc, string::ImprovedString, wait_for_in
 };
 
 /* 
@@ -76,11 +69,14 @@ impl UiMan {
     }
 
     /// Refreshes the screen, renders content
-    pub fn refresh(&mut self) {
+    /// 
+    /// Returns `True/False` based on whether or not the UI has 
+    /// received a close signal (reversed)
+    pub fn refresh(&mut self) -> bool {
         
         // Take input and handle special commands
         wait_for_in(&mut self.controller, &mut self.chbuf);
-        if self.chbuf == K_CTRL_C {self.restore(); exit(0)}
+        if self.chbuf == K_CTRL_C {self.restore(); return false}
         else if self.chbuf == K_NONE {} // bwomp
         else if self.chbuf == K_ARROW_DOWN {
             self.input_selector = (self.input_selector + 1).clamp(0, 1)
@@ -157,7 +153,7 @@ impl UiMan {
         // FIXME: Handle long messages
         for (idx, message) in self.message_buffer.iter().enumerate() {
             print_loc(
-                message.clone().into(), // FIXME: Clone :(
+                ImprovedString::from(message.as_ref()),
                 (bottom_location.0 - idx as u32 - 3, 0),
                 &mut self.controller,
             )
@@ -170,6 +166,8 @@ impl UiMan {
             _ => {(0, 0)}
         };
         move_cursor(location.0, location.1, &mut self.controller);
+
+        return true
     }
 
     /// Fetches all outgoing messages
