@@ -35,11 +35,13 @@ Other minor planned features can be seen in code marked as `TODO` or `FIXME`. Wh
 To use the example client you need to do some set up on the `data` folder. You need to create the files:
 
 - `key` <br>
-Here you need to type any 32 UTF-8 characters (specifically 32, no more no less). These will be converted to bytes and used as your private key, so don't share it around. You *should* use a RNG to generate this, though you can also smash your keyboard for a similar effect.
+Here you need to type any 32 UTF-8 characters (specifically 32, no more no less). These will be converted to bytes and used as your private key, so don't share it around. **You should use an RNG to generate this**, though you can also smash your keyboard for a similar effect.
 - `username` <br>
 This is your username. You can type whatever UTF-8 here and it'll work, though keep it to at most 50 characters. You can change it freely, though keep in mind it's purely cosmetic. If you want a full identity change, change your key.
 - `listener` <br>
+Here will be the address used for creating the listener. More specifically, the interface address. Usually you want either `127.0.0.1:6500` for only accepting connections from the local machine, or `0.0.0.0:6500` for accepting connections from everywhere.
 - `connection` <br>
+This is your "initial host", or the IP address which will be used to get the first host for the network. Essentially, the IP you're connecting to.
 
 After you've made these files, you can start the program and it should run as expected. Though there are also sections on both local and non-local setups.
 
