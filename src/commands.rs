@@ -100,7 +100,7 @@ pub fn verify(command: &NetCommand, salt_cache: &mut SaltCache) -> bool {
             
             // Verify evidence
             let exp_evidence = format!("JOIN\0{}\0{}\0{}\0{}\0", username, utils::key_to_string(public_key), timestamp, salt);
-            if crypt::verify(&public_key, &evidence, &exp_evidence) {
+            if !crypt::verify(&public_key, &evidence, &exp_evidence) {
                 return false
             }
             
@@ -121,12 +121,16 @@ pub fn verify(command: &NetCommand, salt_cache: &mut SaltCache) -> bool {
 
             // Verify salt
             if salt_cache.check_salt(&utils::key_to_string(public_key), salt) {return false}
-            salt_cache.enter_salt(&utils::key_to_string(public_key), salt);
             
             // Verify evidence
             let exp_evidence = format!("LEAVE\0{}\0{}\0{}\0{}\0", username, utils::key_to_string(public_key), timestamp, salt);
             let verified = crypt::verify(&public_key, &evidence, &exp_evidence);
             if !verified {return false}
+
+            // Cache salt
+            salt_cache.enter_salt(&utils::key_to_string(public_key), salt);
+            // Salt is cached here so that it has to pass the evidence check first
+            // So that no one falsifies salts
 
             return true
         }
@@ -140,12 +144,16 @@ pub fn verify(command: &NetCommand, salt_cache: &mut SaltCache) -> bool {
 
             // Verify salt
             if salt_cache.check_salt(&utils::key_to_string(public_key), salt) {return false}
-            salt_cache.enter_salt(&utils::key_to_string(public_key), salt);
 
             // Verify evidence
             let exp_evidence = format!("MSG\0{}\0{}\0{}\0{}\0{}\0{}\0", username, utils::key_to_string(public_key), timestamp, content, utils::tag_to_string(tags.to_vec()), salt);
             let verified = crypt::verify(&public_key, &evidence, &exp_evidence);
             if !verified {return false}
+
+            // Cache salt
+            salt_cache.enter_salt(&utils::key_to_string(public_key), salt);
+            // Salt is cached here so that it has to pass the evidence check first
+            // So that no one falsifies salts
 
             return true
         }

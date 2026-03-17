@@ -19,9 +19,7 @@ If reworked, main will also need reworks.
 // TODO: Toggle for network activity
 // Probably ctrl+d or something
 // Might also wanna include sys activity
-// Basically just dump the log there 
-
-const WHITELIST_CHAR: &[char] = &[' '];
+// Basically just dump the log 
 
 pub struct UiMan {
     // Setup stuff
@@ -107,8 +105,7 @@ impl UiMan {
             // Make the char buffer into a char if it is that
             // and dump into our buffer
             let c = self.chbuf[0] as char;
-            // TODO: Make a better filter for this
-            if c.is_ascii() || WHITELIST_CHAR.contains(&c) {
+            if !c.is_control() {
                 match self.input_selector {
                     0 => self.msg_input.push(c),
                     1 => self.tag_input.push(c),
@@ -126,17 +123,18 @@ impl UiMan {
 
         // Display tag input
         let tag_prefix = if self.input_selector == 1 {">"} else {" "};
+        let display_tags = &self.tag_input[self.tag_input.len().saturating_sub((screen_size.1 - 3).into())..];
         print_loc(
-            format!("{} {}", tag_prefix, self.tag_input).into(), 
+            format!("{} {}", tag_prefix, display_tags).into(), 
             bottom_location, 
             &mut self.controller
         );
 
         // Display message input
-        // FIXME: Handle long messages
-        let msg_prefix = if self.input_selector == 0 {">"} else {" "};
-        print_loc(
-            format!("{} {}", msg_prefix, self.msg_input).into(), 
+        let msg_prefix = if self.input_selector == 0 {">"} else {" "}; 
+        let display_message = &self.msg_input[self.msg_input.len().saturating_sub((screen_size.1 - 3).into())..];
+        print_loc( // ^ Truncate (displayed) message to screen length 
+            format!("{} {}", msg_prefix, display_message).into(), 
             (bottom_location.0 - 1, 0), 
             &mut self.controller
         );
@@ -150,11 +148,15 @@ impl UiMan {
         );
 
         // Display messages
-        // FIXME: Handle long messages
+        let mut offset: i64 = 3;
         for (idx, message) in self.message_buffer.iter().enumerate() {
+            let lines = (message.len() as f64 / screen_size.1 as f64).floor() as i64;
+            offset += lines;
+            let c_location: i64 = bottom_location.0 as i64 - idx as i64 - offset;
+            if c_location < 0 {continue}
             print_loc(
                 ImprovedString::from(message.as_ref()),
-                (bottom_location.0 - idx as u32 - 3, 0),
+                (c_location as u32, 0),
                 &mut self.controller,
             )
         }

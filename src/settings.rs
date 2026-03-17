@@ -4,20 +4,11 @@ A whole bunch of useful constants.
 Basically setting for the entire program.
 */
 
-//
-// Configurable
-//
-
 // Protocol 
 pub const ACCEPTABLE_EPOCH: u64 = 120;
 
 // Graphics
 pub const ENABLE_TUI: bool = true;
-
-//
-// Non-Configurable
-// (Unless you want to change something anyway)
-//
 
 // Data lookup 
 // All paths listed are "DATA_DIRECTORY/path"
@@ -33,6 +24,6 @@ pub const BLUE: &str = "\x1b[34m";
 pub const CYAN: &str = "\x1b[36m";
 
 // Networking
-pub const CONN_TIMEOUT: std::time::Duration = std::time::Duration::from_millis(2500);
-pub const READ_TIMEOUT: std::time::Duration = std::time::Duration::from_millis(1000);
+pub const CONN_TIMEOUT: std::time::Duration = std::time::Duration::from_millis(750);
+pub const READ_TIMEOUT: std::time::Duration = std::time::Duration::from_millis(750);
 pub const REDIR_LIMIT: i64 = 10;

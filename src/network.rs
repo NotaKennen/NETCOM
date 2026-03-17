@@ -2,6 +2,7 @@ use std::{
     fs::read_to_string, io::{Read, Write}, net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream}, str::FromStr, sync::mpsc, thread::sleep
 };
 
+use rand::random;
 use crate::{commands, utils};
 use crate::settings::*;
 
@@ -50,6 +51,8 @@ fn dynamic_read(stream: &mut impl Read) -> Vec<u8> {
 /// Function also handles 
 pub fn net_thread(in_channel: mpsc::Receiver<NetCommand>, out_channel: mpsc::Sender<NetCommand>) {
     
+    // TODO: Add an extra channel for logs
+
     // Data lookup
     let listener_addr = read_to_string(format!("{}{}", DATA_DIRECTORY, LISTENER_PATH)).unwrap();
     let initial_host = read_to_string(format!("{}{}", DATA_DIRECTORY, INITIALHOST_PATH)).unwrap();
@@ -61,12 +64,13 @@ pub fn net_thread(in_channel: mpsc::Receiver<NetCommand>, out_channel: mpsc::Sen
     let mut netm = NetworkMan::new();
     let connected = netm.connect(&initial_host, true).is_ok();
     let bound = netm.bind(&listener_addr).is_ok();
-    if !bound && !connected {panic!("{CYAN}[NET] Couldn't connect, couldn't bind{RESET}")}
+    if !bound && !connected  {panic!("{CYAN}[NET] Couldn't connect, couldn't bind{RESET}")}
     if bound && !connected {println!("{CYAN}[NET] Couldn't connect, running server mode{RESET}")}
     if !bound && connected {println!("{CYAN}[NET] Couldn't bind, running connect-only mode{RESET}")}
 
     // Send a JOIN
-    let join = commands::join(&username, pubkey, privkey, "join0000");
+    let random = random::<u8>(); // We just use a small random as the extra salt for join
+    let join = commands::join(&username, pubkey, privkey, &format!("join{}", random));
     netm.send_command(join);
 
     // Main network loop 
@@ -80,7 +84,7 @@ pub fn net_thread(in_channel: mpsc::Receiver<NetCommand>, out_channel: mpsc::Sen
 
         // Get outgoing messages
         let out_cmd = in_channel.try_recv();
-        if out_cmd.is_ok() {
+        if out_cmd.is_ok() { // TODO: Maybe kill net thread on LEAVE
             let cmd = out_cmd.unwrap();
             let dead = netm.send_command(cmd);
             for item in dead {
@@ -343,15 +347,14 @@ impl NetworkMan {
         let mut index = 0;
         let mut removable: Vec<usize> = vec![];
         for connection in &mut self.connections {
-            index += 1;
             let stat = connection.stream.write_all(&command.to_buf());
             if stat.is_err() {
-                removable.push(index-1); // -1 because weird indexing order
+                removable.push(index);
             }
+            index += 1;
         }
 
         // Remove dead streams
-        removable.sort();
         removable.reverse();
         for item in &removable {
             if self.connections.len() <= *item {continue}
