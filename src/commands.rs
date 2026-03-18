@@ -1,9 +1,9 @@
 use std::collections::HashMap;
-use std::time::{Duration, Instant, SystemTime};
+use std::time::{Instant, SystemTime};
 use rand::random;
 
 use crate::{crypt, network::NetCommand, utils};
-use crate::settings::ACCEPTABLE_EPOCH;
+use crate::settings::{ACCEPTABLE_EPOCH, SALT_LIFETIME};
 
 /*
 Extension module to network.rs
@@ -159,8 +159,6 @@ pub fn verify(command: &NetCommand, salt_cache: &mut SaltCache) -> bool {
         }
     }
 }
-
-const SALT_LIFETIME: Duration = Duration::from_secs(120);
 
 /// A base structure for creating and managing salts
 pub struct SaltCache {

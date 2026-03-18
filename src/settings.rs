@@ -6,6 +6,7 @@ Basically setting for the entire program.
 
 // Protocol 
 pub const ACCEPTABLE_EPOCH: u64 = 120;
+pub const SALT_LIFETIME: std::time::Duration = std::time::Duration::from_secs(120);
 
 // Graphics
 pub const ENABLE_TUI: bool = true;
@@ -25,5 +26,5 @@ pub const CYAN: &str = "\x1b[36m";
 
 // Networking
 pub const CONN_TIMEOUT: std::time::Duration = std::time::Duration::from_millis(750);
-pub const READ_TIMEOUT: std::time::Duration = std::time::Duration::from_millis(750);
+pub const READ_TIMEOUT: std::time::Duration = std::time::Duration::from_millis(50);
 pub const REDIR_LIMIT: i64 = 10;

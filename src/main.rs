@@ -28,7 +28,7 @@ fn main() {
     // Start up networking thread
     let (nthread_send, net_recv) = mpsc::channel();
     let (net_send, nthread_recv) = mpsc::channel();
-    thread::spawn(move || net_thread(nthread_recv, nthread_send));
+    let net_thread = thread::spawn(move || net_thread(nthread_recv, nthread_send));
     println!("{BLUE}[?] Network thread set up");
 
     // Extra prints
@@ -78,8 +78,8 @@ fn main() {
         // TODO: add a LEAVE command for nogui
     }
 
-    // Send leave
+    // Send leave and (thus) kill net thread
     let leave = commands::leave(&username, public_key, private_key, &salt_cache.get_salt());
     let _ = net_send.send(leave);
-    sleep(Duration::from_secs(2)); // Wait so that networkthread can send it
+    let _ = net_thread.join();
 }

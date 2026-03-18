@@ -148,7 +148,7 @@ impl UiMan {
         );
 
         // Display messages
-        let mut offset: i64 = 3;
+        let mut offset: i64 = 3; // 3 because messages start at bottom-3
         for (idx, message) in self.message_buffer.iter().enumerate() {
             let lines = (message.len() as f64 / screen_size.1 as f64).floor() as i64;
             offset += lines;

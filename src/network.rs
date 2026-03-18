@@ -84,11 +84,18 @@ pub fn net_thread(in_channel: mpsc::Receiver<NetCommand>, out_channel: mpsc::Sen
 
         // Get outgoing messages
         let out_cmd = in_channel.try_recv();
-        if out_cmd.is_ok() { // TODO: Maybe kill net thread on LEAVE
+        if out_cmd.is_ok() {
+            // Receive messages
             let cmd = out_cmd.unwrap();
-            let dead = netm.send_command(cmd);
+            let dead = netm.send_command(cmd.clone());
             for item in dead {
                 if !ENABLE_TUI {println!("{CYAN}[NET] Stream index {} died{RESET}", item)}
+            }
+
+            // Kill thread on LEAVE
+            match cmd {
+                NetCommand::Leave {..} => {return}
+                _ => {}
             }
         }
 
